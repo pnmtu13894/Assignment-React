@@ -12,24 +12,24 @@ class Helpdesk extends Component {
 
 
         this.state = {
-            tickets: [],
-            reAssignedTickets: [],
-            selectedTicket: null,
-            selectedAssignedTicket: null,
-            selectedPriorityLevel: null,
-            selectedEscalationLevel: null,
-            selectedTech: null,
+            tickets: [], // array to contain retrieved ticket from the api
+            reAssignedTickets: [], // array to contain reassigned tickets
+            selectedTicket: null, // value that instantly hold the current selected ticket
+            selectedAssignedTicket: null, // value that instantly hold the current selected assigned ticket
+            selectedPriorityLevel: null, // value that instantly hold the current selected priority level
+            selectedEscalationLevel: null, // value that instantly hold the escalation level
+            selectedTech: null, // value that instantly
         };
 
-        this.handleTechChange = this.handleTechChange.bind(this);
-        this.assignTicketToTech = this.assignTicketToTech.bind(this);
-        this.reassignTicketToTech = this.reassignTicketToTech.bind(this);
-        this.handleCloseDialog = this.handleCloseDialog.bind(this);
-        this.handleCloseDialog2 = this.handleCloseDialog2.bind(this);
-        this.ticketDetailsClick = this.ticketDetailsClick.bind(this);
-        this.handlePriorityLevelChange = this.handlePriorityLevelChange.bind(this);
-        this.handleEscalationLevelChange = this.handleEscalationLevelChange.bind(this);
-        this.handleEditClick = this.handleEditClick.bind(this);
+        this.handleTechChange = this.handleTechChange.bind(this); //Handle changes chosen technician from input
+        this.assignTicketToTech = this.assignTicketToTech.bind(this); // handle the assign/submit button from modal and also push data into database
+        this.reassignTicketToTech = this.reassignTicketToTech.bind(this); // handle the reassigned Tickets and push data back to database.
+        this.handleCloseDialog = this.handleCloseDialog.bind(this); // handle dialog's closing button from Pending Tickets part
+        this.handleCloseDialog2 = this.handleCloseDialog2.bind(this); // handle dialog's closing button from Reassigned Tickets part
+        this.ticketDetailsClick = this.ticketDetailsClick.bind(this); // handle the More Details Button to open the details box
+        this.handlePriorityLevelChange = this.handlePriorityLevelChange.bind(this); // handle changes of priority level inputs
+        this.handleEscalationLevelChange = this.handleEscalationLevelChange.bind(this); // handle changes of escalation level inputs
+        this.handleEditClick = this.handleEditClick.bind(this); // creating component Button and handling click to retrieve data from specific row/cell of table and pass it to Details box
 
     }
 
@@ -118,18 +118,19 @@ class Helpdesk extends Component {
         window.location.reload();
     }
 
-
+    // Retrieve data from both firebase and api database and save into states
     componentDidMount(){
-        fetch(URL_API + '/api/tickets')
+        fetch(URL_API + '/api/tickets') // fetching data from api and receive as json format
             .then((response) => response.json())
             .then((responseJson) => {
                 const pendingTickets = [];
-                const reAssignedTickets = [];
                 for(const ele in responseJson){
                     firebase.database().ref('ticket/' + responseJson[ele].id).on('value', (snapshot) => {
+                        // Compare if the api's ticket is not available in ticket's database reference then push into the array
                        if(snapshot.val() === null){
                            pendingTickets.push(responseJson[ele]);
                        }
+                       //force to re-render the view
                         this.forceUpdate();
                     })
                 }
@@ -143,24 +144,26 @@ class Helpdesk extends Component {
             });
 
 
-        fetch(URL_API + '/api/tickets')
+        fetch(URL_API + '/api/tickets') // fetching data from api and receive as json format
             .then((response) => response.json())
             .then((responseJson) => {
                 const reAssignedTickets = [];
                 for(const ele in responseJson){
                     firebase.database().ref('ticket/' + responseJson[ele].id).on('value', (snapshot) => {
                         if (snapshot.val() !== null && snapshot.val().isEscalated === true){
-                            // responseJson[ele].tech_name = snapshot.val().user_id;
+                            // Retrieve and push values that are already in ticket database reference and the isEscalated element is true into an array for reassigned tickets
                             const user_id = snapshot.val().user_id;
                             console.log(user_id);
+                            // Getting user from user_id that retrieve before from ticket reference
                                 const tech = firebase.database().ref('user/' + user_id);
                                 tech.on('value', (data) => {
                                    responseJson[ele].techName = data.val().name;
                                 });
-                            responseJson[ele].priorityLevel = snapshot.val().priority_level;
-                            responseJson[ele].escalationLevel = snapshot.val().escalation_level;
+                            responseJson[ele].priorityLevel = snapshot.val().priority_level; // adding previous priorityLevel element
+                            responseJson[ele].escalationLevel = snapshot.val().escalation_level; // adding previous escalationLevel element
                             reAssignedTickets.push(responseJson[ele]);
                         }
+                        //force to re-render the view
                         this.forceUpdate();
                     })
                 }
@@ -175,7 +178,7 @@ class Helpdesk extends Component {
     }
 
 
-
+    // Retrive data from specific row of table (here is the ticket)
     handleEditClick(cell, row){
 
         return (
@@ -183,6 +186,7 @@ class Helpdesk extends Component {
         );
     }
 
+    // Retrive data from specific row of table (here is the ticket)
     handleEditAssignedTicketClick(cell, row){
         return (
             <Button bsStyle="info" onClick={() => this.assignedTicketDetailsClick(row)}>More Details</Button>
@@ -200,9 +204,10 @@ class Helpdesk extends Component {
                 <Row>
                     <Col md={(this.state.selectedTicket !== null ? 7 : 12)}>
                         <h1>Pending Tickets</h1>
-                        {/*{this.state.tickets.length < 1 && (*/}
-                            {/*<p className="alert alert-info" >There are no tickets to display</p>*/}
-                        {/*)}*/}
+
+
+
+                            {/*Create a data table with pagination*/}
 
                         <BootstrapTable
                             data={ this.state.tickets }
@@ -281,7 +286,7 @@ class Helpdesk extends Component {
                                     <div className="clearfix text-center"><br/>
                                         <Button className="pull-right" bsStyle="success"
                                                 onClick={this.reassignTicketToTech}
-                                        >Assign</Button>
+                                        >Reassign</Button>
                                     </div>
                                 </div>
                             </Jumbotron>
@@ -295,6 +300,7 @@ class Helpdesk extends Component {
     }
 }
 
+// Child of component Helpdesk to declare options of technician
 class TechUserDisplay extends Component {
 
     constructor(props){
@@ -309,7 +315,7 @@ class TechUserDisplay extends Component {
     componentDidMount(){
 
         const users = firebase.database().ref('user/');
-
+        // Read data from user object and push it into an array.
         users.on('value', (data) => {
             const tempTech = [];
             const listOfData = data.val();
@@ -352,6 +358,7 @@ class TechUserDisplay extends Component {
 
 }
 
+// Child of component Helpdesk to declare the priority level options
 class PriorityLevelDisplay extends Component{
 
     constructor(props){
@@ -385,6 +392,8 @@ class PriorityLevelDisplay extends Component{
 
 }
 
+
+// Child of component Helpdesk to declare the escalation level options
 export class EscalationLevelDisplay extends Component{
 
     constructor(props){

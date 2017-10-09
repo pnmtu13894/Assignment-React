@@ -2,7 +2,7 @@ import React, {Component} from 'react';
 import {URL_API, convertHTMLTag,} from "../../FileHelpers/helper";
 import firebase from 'firebase';
 import {Jumbotron, Table, Row, Col, FormGroup, ControlLabel, Button} from 'react-bootstrap';
-import { confirmAlert } from 'react-confirm-alert'; // Import
+import { confirmAlert } from 'react-confirm-alert';
 import 'react-confirm-alert/src/react-confirm-alert.css';
 import TinyMCE from 'react-tinymce';
 
@@ -14,11 +14,11 @@ class CommentDisplay extends Component{
     constructor(props){
         super(props);
         this.state={
-            currentComment: ""
+            currentComment: "" // string parameter to hold value from textarea field
         };
 
-        this.handleInputComment = this.handleInputComment.bind(this);
-        this.handleSubmitComment = this.handleSubmitComment.bind(this);
+        this.handleInputComment = this.handleInputComment.bind(this); // handle the changes from comment input field
+        this.handleSubmitComment = this.handleSubmitComment.bind(this); // handle the submit button in Comment box
     }
 
     handleInputComment(e){
@@ -94,14 +94,14 @@ class TicketDetailsDisplay extends Component {
     constructor(props){
         super(props);
         this.state = {
-            submitStatus: null,
-            isEscalated: false
+            submitStatus: null, // parameter contains value of select status field
+            isEscalated: false // boolean parameter containing value of the checkbox
         };
 
-        this.statusChange = this.statusChange.bind(this);
-        this.updateSelectedTicket = this.updateSelectedTicket.bind(this);
-        this.deleteSelectedTicket = this.deleteSelectedTicket.bind(this);
-        this.toggleChange = this.toggleChange.bind(this);
+        this.statusChange = this.statusChange.bind(this); // handle the changes of selecting status field
+        this.updateSelectedTicket = this.updateSelectedTicket.bind(this); // handle update button
+        this.deleteSelectedTicket = this.deleteSelectedTicket.bind(this); // handle delete button
+        this.toggleChange = this.toggleChange.bind(this); // handle changes of checkbox field
     }
 
     toggleChange(){
@@ -139,7 +139,7 @@ class TicketDetailsDisplay extends Component {
 
                 firebase.database().ref().remove('ticket/' + id);
 
-                fetch(URL_API + "/api/tickets/" + id + "/delete", {
+                fetch(URL_API + "/api/tickets/" + id + "/delete", { // using GET method to delete specific ticket in database
                     method: 'GET'
                 })
                     .then((response) => response.json())
@@ -170,10 +170,10 @@ class TicketDetailsDisplay extends Component {
         }
 
         const data = {};
-        data['ticket/' + id + "/isEscalated"] = this.state.isEscalated;
+        data['ticket/' + id + "/isEscalated"] = this.state.isEscalated; // put additional element into the specific ticket object
         firebase.database().ref().update(data);
 
-        fetch(URL_API + "/api/ticket/"+ id + "/updateStatus", {
+        fetch(URL_API + "/api/ticket/"+ id + "/updateStatus", { // using POST method to update new status id of specific object
             method: 'POST',
             headers: {
                 'Accept': 'application/json',
@@ -204,6 +204,7 @@ class TicketDetailsDisplay extends Component {
     }
 
     componentDidMount(){
+        //Loading statuses object from parent class to assign current status of each ticket
         this.props.statuses.map((status) => {
            if(this.props.selectedTicket.status_id === status.id && status.id !== null){
                this.setState({submitStatus: status.name});
@@ -279,26 +280,21 @@ class Technician extends Component {
     constructor(props){
         super(props);
         this.state = {
-        tickets: [],
-        statuses: [],
-        selectedTicket: null,
-        selectedStatus: null,
-            selectedTicketComment: null,
-            submitComment: "",
-        selectedEscalationLevel: null
+        tickets: [], // array that contains the tickets retrieved from database
+        statuses: [], // array that contains ticket's statuses retrieved from database
+        selectedTicket: null, // parameter that hold the data of selected ticket when clicking on certain ticket
+        selectedStatus: null, // parameter that hold the data of changes status of certain ticket
+            selectedTicketComment: null, // parameter that hold the value from ticket's textarea field
+        selectedEscalationLevel: null // parameter that hold the value from ticket's escalation level input
     };
 
-    this.ticketDetailsClick = this.ticketDetailsClick.bind(this);
-    this.handleCloseDialog = this.handleCloseDialog.bind(this);
-    this.ticketCommentClick = this.ticketCommentClick.bind(this);
-    this.handleCloseCommentDialog = this.ticketCommentClick.bind(this);
-    this.handleStatusChange = this.handleStatusChange(this);
+    this.ticketDetailsClick = this.ticketDetailsClick.bind(this); // handle the click from Details button
+    this.handleCloseDialog = this.handleCloseDialog.bind(this); // handle the click to close the details box
+    this.ticketCommentClick = this.ticketCommentClick.bind(this); // handle the click to open the Comment Box
 }
 
 
-    handleStatusChange(status){
-        this.setState({submitComment: status});
-    }
+
 
 
     ticketDetailsClick(ticket){
@@ -319,20 +315,15 @@ class Technician extends Component {
         });
     }
 
-    handleCloseCommentDialog(){
-        this.setState({
-           selectedTicketComment: null
-        });
-    }
 
 
     componentDidMount(){
 
-        fetch(URL_API + '/api/tickets')
+        fetch(URL_API + '/api/tickets') // Fetching data from api to retrieve ticket's data in json format
             .then((response) => response.json())
             .then((responseJson) => {
             const myTickets = [];
-            for(const ele in responseJson) {
+            for(const ele in responseJson) { // loop through each element inside tickets object
                 firebase.database().ref('ticket/'+responseJson[ele].id).on('value', (snapshot) => {
                     if(snapshot.val() !== null && snapshot.val().user_id === this.props.user.uid && snapshot.val().isEscalated === false) {
                         myTickets.push(responseJson[ele]);
@@ -350,14 +341,12 @@ class Technician extends Component {
                 });
         });
 
-    fetch(URL_API + "/api/fetch/statuses")
+    fetch(URL_API + "/api/fetch/statuses") // Fetching data from api to retrieve ticket's statuses in json format
         .then((response) => response.json())
         .then((results) => {
             const status_list = [];
             for(const ele in results){
-                // if(results.length > 0 && results[ele].name !== null){
                     status_list.push(results[ele]);
-                // }
             }
             return status_list;
         })
@@ -442,8 +431,6 @@ class Technician extends Component {
     );
 }
 }
-
-
 
 
 
